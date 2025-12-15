@@ -12,6 +12,7 @@ const client = new MongoClient(uri);
 const app = express();
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json()); // JSON 파싱
@@ -438,8 +439,8 @@ async function startServer() {
     // 서버 시작 시에도 1회 집계 (선택)
     aggregateUserLikes();
 
-    app.listen(4000, () => {
-      console.log("🚀 Server running on http://localhost:4000");
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error("MongoDB 연결 실패:", err);
