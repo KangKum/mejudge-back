@@ -14,7 +14,14 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://mejudge.vercel.app", // ← 정확한 프론트 도메인
+    ],
+  })
+);
 app.use(express.json()); // JSON 파싱
 
 //회원가입
