@@ -30,12 +30,12 @@ app.post("/api/signup", async (req, res) => {
   try {
     const existingUser = await userCollection.findOne({ id });
     if (existingUser) {
-      return res.status(200).json({ message: "중복된 아이디입니다" });
+      return res.status(400).json({ message: "중복된 아이디입니다" });
     }
 
     const existingNickname = await userCollection.findOne({ nickname });
     if (existingNickname) {
-      return res.status(200).json({ message: "중복된 닉네임입니다" });
+      return res.status(401).json({ message: "중복된 닉네임입니다" });
     }
 
     // 비밀번호 해싱
@@ -43,7 +43,7 @@ app.post("/api/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     await userCollection.insertOne({ id, pw: hashedPassword, nickname });
-    res.status(201).json({ message: "회원가입이 완료되었습니다" });
+    res.status(200).json({ message: "회원가입이 완료되었습니다" });
   } catch (error) {
     res.status(500).json({ error: "회원가입 실패" });
   }
