@@ -36,6 +36,10 @@ app.post("/api/signup", async (req, res) => {
     const existingNickname = await userCollection.findOne({ nickname });
     if (existingNickname) {
       return res.status(401).json({ message: "중복된 닉네임입니다" });
+    } else if (nickname.length < 2 || nickname.length > 8) {
+      return res.status(402).json({ message: "닉네임은 2~8자여야 합니다" });
+    } else if (!/^[가-힣a-zA-Z0-9]+$/.test(nickname)) {
+      return res.status(403).json({ message: "닉네임은 한글, 영어, 숫자만 사용할 수 있습니다." });
     }
 
     // 비밀번호 해싱
