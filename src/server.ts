@@ -116,6 +116,8 @@ app.post("/api/case", async (req, res) => {
 app.get("/api/cases", async (req, res) => {
   const { type, userId } = req.query;
   let query = {};
+  const projection = { _id: 1, caseNumber: 1, caseTitle: 1 };
+
   if (type === "done" && userId) {
     query = { sentencedUsers: userId };
   } else if (type === "undone" && userId) {
@@ -123,7 +125,7 @@ app.get("/api/cases", async (req, res) => {
   }
 
   try {
-    const cases = await caseCollection.find(query).sort({ _id: -1 }).toArray();
+    const cases = await caseCollection.find(query, { projection }).sort({ _id: -1 }).toArray();
     res.status(200).json(cases);
   } catch (error) {
     res.status(500).json({ error: "사건 목록 조회 실패" });
