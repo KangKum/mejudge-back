@@ -266,6 +266,16 @@ app.get("/api/comment/:caseId", async (req, res) => {
     res.status(500).json({ error: "댓글 조회에 실패했습니다." });
   }
 });
+//댓글 전체 개수 조회
+app.get("/api/comment/count/:caseId", async (req, res) => {
+  const { caseId } = req.params;
+  try {
+    const comments = await commentCollection.find({ caseId }).toArray();
+    res.status(200).json(comments.length);
+  } catch (error) {
+    res.status(500).json({ error: "댓글 조회에 실패했습니다." });
+  }
+});
 //댓글 개수 조회(유저별)
 app.get("/api/comments/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -290,7 +300,7 @@ app.get("/api/comment/likes/:userId", async (req, res) => {
     res.status(500).json({ error: "좋아요한 댓글 조회에 실패했습니다." });
   }
 });
-//받은 좋아요 수 조회(유저별)
+//받은 싫어요 수 조회(유저별)
 app.get("/api/comment/dislikes/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
