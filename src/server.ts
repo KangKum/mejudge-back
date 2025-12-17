@@ -248,6 +248,16 @@ app.post("/api/comment/:userId/:caseId", async (req, res) => {
     res.status(500).json({ error: "댓글 등록에 실패했습니다." });
   }
 });
+//댓글 전체 개수 조회
+app.get("/api/comment/count/:caseId", async (req, res) => {
+  const { caseId } = req.params;
+  try {
+    const comments = await commentCollection.find({ caseId }).toArray();
+    res.status(200).json(comments.length);
+  } catch (error) {
+    res.status(500).json({ error: "댓글 조회에 실패했습니다." });
+  }
+});
 //댓글 조회(케이스별)
 app.get("/api/comment/:caseId", async (req, res) => {
   const { caseId } = req.params;
@@ -262,16 +272,6 @@ app.get("/api/comment/:caseId", async (req, res) => {
       ])
       .toArray();
     res.status(200).json(comments);
-  } catch (error) {
-    res.status(500).json({ error: "댓글 조회에 실패했습니다." });
-  }
-});
-//댓글 전체 개수 조회
-app.get("/api/comment/count/:caseId", async (req, res) => {
-  const { caseId } = req.params;
-  try {
-    const comments = await commentCollection.find({ caseId }).toArray();
-    res.status(200).json(comments.length);
   } catch (error) {
     res.status(500).json({ error: "댓글 조회에 실패했습니다." });
   }
