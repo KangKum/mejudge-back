@@ -36,6 +36,8 @@ app.post("/api/signup", async (req, res) => {
     const existingNickname = await userCollection.findOne({ nickname });
     if (existingNickname) {
       return res.status(401).json({ message: "중복된 닉네임입니다" });
+    } else if (nickname.includes("불건전한닉네임")) {
+      return res.status(404).json({ message: "해당 닉네임은 사용할 수 없습니다." });
     } else if (nickname.length < 2 || nickname.length > 8) {
       return res.status(402).json({ message: "닉네임은 2~8자여야 합니다" });
     } else if (!/^[가-힣a-zA-Z0-9]+$/.test(nickname)) {
@@ -108,7 +110,10 @@ app.put("/api/change-nickname", async (req, res) => {
     const { nickname } = req.body;
     const countBadnickname = await badnicknameCollection.countDocuments();
     const newNickname = "불건전한닉네임" + (countBadnickname + 1);
+
+    //닉네임 변경
     const result = await userCollection.updateOne({ nickname }, { $set: { nickname: newNickname } });
+    console.log(result);
     if (result.matchedCount === 0) {
       return res.status(404).json({ message: "해당 닉네임의 유저를 찾을 수 없습니다." });
     }
@@ -246,7 +251,7 @@ app.get("/api/judgement/:userId/:caseId", async (req, res) => {
     }
   } catch (error) {}
 });
-//판결 개수 조회(유저별)
+//판결 개수 조회(유저아이디별)
 app.get("/api/judgements/:userId", async (req, res) => {
   const { userId } = req.params;
 
@@ -297,7 +302,7 @@ app.get("/api/comment/:caseId", async (req, res) => {
     res.status(500).json({ error: "댓글 조회에 실패했습니다." });
   }
 });
-//댓글 개수 조회(유저별)
+//댓글 개수 조회(유저아이디별)
 app.get("/api/comments/:userId", async (req, res) => {
   const { userId } = req.params;
 
@@ -318,7 +323,7 @@ app.delete("/api/comment/delete/:commentId", async (req, res) => {
     res.status(500).json({ error: "댓글 삭제에 실패했습니다." });
   }
 });
-//받은 좋아요 수 조회(유저별)
+//받은 좋아요 수 조회(유저아이디별)
 app.get("/api/comment/likes/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
@@ -331,7 +336,7 @@ app.get("/api/comment/likes/:userId", async (req, res) => {
     res.status(500).json({ error: "좋아요한 댓글 조회에 실패했습니다." });
   }
 });
-//받은 싫어요 수 조회(유저별)
+//받은 싫어요 수 조회(유저아이디별)
 app.get("/api/comment/dislikes/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
