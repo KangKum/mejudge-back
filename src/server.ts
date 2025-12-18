@@ -400,7 +400,18 @@ app.delete("/api/users/delete-account", async (req, res) => {
     const passwordMatch = await bcrypt.compare(confirmPassword, user.pw);
     if (!passwordMatch) return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
 
+    // 1. 유저 삭제
     await userCollection.deleteOne({ id: userId });
+
+    // 2. 해당 유저가 작성한 댓글 삭제
+    await commentCollection.deleteMany({ userId });
+
+    // 3. 모든 댓글에서 likes, dislikes 배열에서 userId 제거
+    await commentCollection.updateMany({ likes: userId }, { $pull: { likes: userId } });
+    await commentCollection.updateMany({ dislikes: userId }, { $pull: { dislikes: userId } });
+
+    // 4. (선택) 판결 등 다른 컬렉션도 필요시 삭제
+    await judgementCollection.deleteMany({ userId });
     res.status(200).json({ message: "회원탈퇴가 성공적으로 완료되었습니다." });
   } catch (error) {
     res.status(500).json({ error: "회원탈퇴에 실패했습니다." });
