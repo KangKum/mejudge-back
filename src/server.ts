@@ -388,6 +388,20 @@ app.post("/api/users/change-password", async (req, res) => {
   }
 });
 
+//회원탈퇴
+app.delete("/api/users/delete-account", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "토큰이 필요합니다." });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+    await userCollection.deleteOne({ id: userId });
+    res.status(200).json({ message: "회원탈퇴가 성공적으로 완료되었습니다." });
+  } catch (error) {
+    res.status(500).json({ error: "회원탈퇴에 실패했습니다." });
+  }
+});
+
 //랭킹 상위 10개 가져오기
 app.get("/api/ranking/user-likes", async (req, res) => {
   try {
