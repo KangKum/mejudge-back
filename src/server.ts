@@ -156,12 +156,14 @@ app.get("/api/cases", async (req, res) => {
   }
 
   try {
+    const allCases = await caseCollection.countDocuments(query);
     const cases = await caseCollection.find(query, { projection }).sort({ _id: -1 }).limit(limit).toArray();
-    res.status(200).json(cases);
+    res.status(200).json({ totalCases: allCases, selectedCases: cases });
   } catch (error) {
     res.status(500).json({ error: "사건 목록 조회 실패" });
   }
 });
+
 //마지막 사건 조회
 app.get("/api/cases/latest", async (req, res) => {
   try {
