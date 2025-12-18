@@ -287,6 +287,16 @@ app.get("/api/comments/:userId", async (req, res) => {
     res.status(500).json({ error: "댓글 조회에 실패했습니다." });
   }
 });
+//댓글 삭제
+app.delete("/api/comment/delete/:commentId", async (req, res) => {
+  const { commentId } = req.params;
+  try {
+    await commentCollection.deleteOne({ _id: new ObjectId(commentId) });
+    res.status(200).json({ message: "댓글이 성공적으로 삭제되었습니다." });
+  } catch (error) {
+    res.status(500).json({ error: "댓글 삭제에 실패했습니다." });
+  }
+});
 //받은 좋아요 수 조회(유저별)
 app.get("/api/comment/likes/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -410,7 +420,7 @@ app.delete("/api/users/delete-account", async (req, res) => {
     await commentCollection.updateMany({ likes: userId }, { $pull: { likes: userId } });
     await commentCollection.updateMany({ dislikes: userId }, { $pull: { dislikes: userId } });
 
-    // 4. (선택) 판결 등 다른 컬렉션도 필요시 삭제
+    // 4. 판결 삭제
     await judgementCollection.deleteMany({ userId });
     res.status(200).json({ message: "회원탈퇴가 성공적으로 완료되었습니다." });
   } catch (error) {
