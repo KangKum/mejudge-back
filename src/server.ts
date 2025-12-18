@@ -113,7 +113,6 @@ app.put("/api/change-nickname", async (req, res) => {
 
     //닉네임 변경
     const result = await userCollection.updateOne({ nickname }, { $set: { nickname: newNickname } });
-    console.log(result);
     if (result.matchedCount === 0) {
       return res.status(404).json({ message: "해당 닉네임의 유저를 찾을 수 없습니다." });
     }
