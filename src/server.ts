@@ -372,14 +372,11 @@ app.post("/api/users/change-password", async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     const user = await userCollection.findOne({ id: userId });
-    if (!user) {
-      return res.status(400).json({ message: "사용자를 찾을 수 없습니다." });
-    }
+    if (!user) return res.status(400).json({ message: "사용자를 찾을 수 없습니다." });
 
     const passwordMatch = await bcrypt.compare(currentPassword, user.pw);
-    if (!passwordMatch) {
-      return res.status(401).json({ message: "현재 비밀번호가 일치하지 않습니다." });
-    }
+    if (!passwordMatch) return res.status(401).json({ message: "현재 비밀번호가 일치하지 않습니다." });
+
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     await userCollection.updateOne({ id: userId }, { $set: { pw: hashedNewPassword } });
     res.status(200).json({ message: "비밀번호가 성공적으로 변경되었습니다." });
@@ -395,6 +392,14 @@ app.delete("/api/users/delete-account", async (req, res) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.userId;
+    const { confirmPassword } = req.body;
+
+    const user = await userCollection.findOne({ id: userId });
+    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+    const passwordMatch = await bcrypt.compare(confirmPassword, user.pw);
+    if (!passwordMatch) return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
+
     await userCollection.deleteOne({ id: userId });
     res.status(200).json({ message: "회원탈퇴가 성공적으로 완료되었습니다." });
   } catch (error) {
