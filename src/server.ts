@@ -99,6 +99,27 @@ app.get("/api/check-admin", async (req, res) => {
   }
 });
 
+// 닉네임이 일치하는 유저의 닉네임을 '불건전한닉네임'으로 변경
+app.put("/api/change-nickname", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "토큰이 필요합니다." });
+  try {
+    jwt.verify(token, JWT_SECRET); // 인증만 확인
+    const { nickname } = req.body;
+    const countBadnickname = await badnicknameCollection.countDocuments();
+    const newNickname = "불건전한닉네임" + (countBadnickname + 1);
+    const result = await userCollection.updateOne({ nickname }, { $set: { nickname: newNickname } });
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "해당 닉네임의 유저를 찾을 수 없습니다." });
+    }
+    // badnicknameCollection에 기록 남기기(선택)
+    await badnicknameCollection.insertOne({ nickname: newNickname, changedAt: new Date() });
+    res.status(200).json({ message: "닉네임이 성공적으로 변경되었습니다." });
+  } catch (error) {
+    res.status(500).json({ error: "닉네임 변경에 실패했습니다." });
+  }
+});
+
 //사건 등록
 app.post("/api/case", async (req, res) => {
   const data = req.body;
@@ -485,6 +506,7 @@ let caseCollection;
 let judgementCollection;
 let commentCollection;
 let rankingCollection;
+let badnicknameCollection;
 async function startServer() {
   try {
     await client.connect();
@@ -496,6 +518,7 @@ async function startServer() {
     judgementCollection = db.collection("judgement"); // 예: "judgements"
     commentCollection = db.collection("comment"); // 예: "comments"
     rankingCollection = db.collection("userLikeRanking");
+    badnicknameCollection = db.collection("badnickname");
 
     // 매일 새벽 3시에 집계 실행 (서버 실행 중일 때)
     cron.schedule("0 3 * * *", aggregateUserLikes);
