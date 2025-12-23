@@ -19,6 +19,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://mejudge.vercel.app", // ← 정확한 프론트 도메인
+      "https://www.mejudge.com",
+      "https://mejudge.com",
     ],
   })
 );
@@ -133,7 +135,7 @@ app.post("/api/case", async (req, res) => {
     const nextCaseNumber = lastCase.length > 0 ? lastCase[0].caseNumber + 1 : 1;
 
     // 사건 데이터에 caseNumber 추가
-    const caseData = { ...data, caseNumber: nextCaseNumber };
+    const caseData = { ...data, caseNumber: nextCaseNumber, images: `cases/${nextCaseNumber}/case${nextCaseNumber}_1.webp` };
 
     await caseCollection.insertOne(caseData);
     res.status(201).json({ message: "사건이 성공적으로 등록되었습니다." });
@@ -163,7 +165,6 @@ app.get("/api/cases", async (req, res) => {
     res.status(500).json({ error: "사건 목록 조회 실패" });
   }
 });
-
 //마지막 사건 조회
 app.get("/api/cases/latest", async (req, res) => {
   try {
@@ -176,7 +177,6 @@ app.get("/api/cases/latest", async (req, res) => {
     res.status(500).json({ error: "최신 사건 조회 실패" });
   }
 });
-
 //사건 페이지 진입(caseId)
 app.get("/api/case/:caseId", async (req, res) => {
   const caseId = req.params.caseId;
