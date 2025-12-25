@@ -229,6 +229,7 @@ app.post("/api/judgement/:userId/:caseId", async (req, res) => {
   } else if (judgementData.mode === 1) {
     saveData.year = 0;
     saveData.month = 0;
+    saveData.suspend = 0;
   }
   try {
     await judgementCollection.insertOne(saveData);
