@@ -529,8 +529,8 @@ async function startServer() {
     rankingCollection = db.collection("userLikeRanking");
     badnicknameCollection = db.collection("badnickname");
 
-    // 매일 새벽 3시에 집계 실행 (서버 실행 중일 때)
-    cron.schedule("0 3 * * *", aggregateUserLikes);
+    // 매일 오후 9시에 집계 실행 (서버 실행 중일 때)
+    cron.schedule("0 21 * * *", aggregateUserLikes);
     // 서버 시작 시에도 1회 집계 (선택)
     aggregateUserLikes();
 
