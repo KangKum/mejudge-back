@@ -4,6 +4,14 @@ import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import cron from "node-cron";
+import multer from "multer";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import crypto from "crypto";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB 제한
+});
 
 dotenv.config();
 
@@ -22,6 +30,7 @@ app.use(
       "https://www.mejudge.com",
       "https://mejudge.com",
     ],
+    credentials: true,
   })
 );
 app.use(express.json()); // JSON 파싱
@@ -126,23 +135,85 @@ app.put("/api/change-nickname", async (req, res) => {
   }
 });
 
-//사건 등록
-app.post("/api/case", async (req, res) => {
-  const data = req.body;
+// 사건 등록
+app.post("/api/case", upload.single("image"), async (req, res) => {
   try {
-    // 현재 가장 큰 caseNumber 조회
+    // 🔐 인증
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "인증 필요" });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await userCollection.findOne({ id: decoded.userId });
+    if (user?.isMJAdmin !== "yesAdmin") {
+      return res.status(403).json({ message: "관리자만 가능" });
+    }
+
+    // 📦 데이터
+    const { caseTitle, caseText, caseResult } = req.body;
+    const file = req.file;
+
+    if (!caseTitle || !caseText || !caseResult) {
+      return res.status(400).json({ message: "필수 정보 누락" });
+    }
+
+    if (!file) {
+      return res.status(400).json({ message: "이미지가 필요합니다." });
+    }
+
+    if (!file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ message: "이미지 파일만 업로드 가능합니다." });
+    }
+
+    const allowedExt = ["png", "jpg", "jpeg", "webp"];
+    const ext = file.originalname.split(".").pop().toLowerCase();
+
+    if (!allowedExt.includes(ext)) {
+      return res.status(400).json({ message: "허용되지 않은 이미지 형식입니다." });
+    }
+
+    // 🔢 caseNumber
     const lastCase = await caseCollection.find().sort({ caseNumber: -1 }).limit(1).toArray();
+
     const nextCaseNumber = lastCase.length > 0 ? lastCase[0].caseNumber + 1 : 1;
 
-    // 사건 데이터에 caseNumber 추가
-    const caseData = { ...data, caseNumber: nextCaseNumber, images: `cases/${nextCaseNumber}/case${nextCaseNumber}_1.webp` };
+    // 🧾 파일명
+    const fileName = `case${nextCaseNumber}_${crypto.randomUUID()}.${ext}`;
+    const r2Key = `cases/${nextCaseNumber}/${fileName}`;
+
+    // ☁️ R2 업로드
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: "mejudgeimg",
+        Key: r2Key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+    );
+
+    // 💾 DB 저장
+    const caseData = {
+      caseNumber: nextCaseNumber,
+      caseTitle,
+      caseText,
+      caseResult,
+      images: [r2Key],
+      createdAt: new Date(),
+    };
 
     await caseCollection.insertOne(caseData);
-    res.status(201).json({ message: "사건이 성공적으로 등록되었습니다." });
+
+    res.status(201).json({
+      message: "사건이 성공적으로 등록되었습니다.",
+      image: r2Key,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "사건 등록에 실패했습니다." });
   }
 });
+
 //사건 조회
 app.get("/api/cases", async (req, res) => {
   const { type, userId } = req.query;
@@ -509,6 +580,15 @@ async function aggregateUserLikes() {
     console.error("[user_likes_ranking] 집계 실패:", err);
   }
 }
+//R2 클라이언트 생성 (한 번만)
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY,
+    secretAccessKey: process.env.R2_SECRET_KEY,
+  },
+});
 
 let userCollection;
 let caseCollection;
