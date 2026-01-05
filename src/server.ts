@@ -179,7 +179,7 @@ app.post("/api/case", upload.single("image"), async (req, res) => {
     const nextCaseNumber = lastCase.length > 0 ? lastCase[0].caseNumber + 1 : 1;
 
     // 🧾 파일명
-    const fileName = `case${nextCaseNumber}_${crypto.randomUUID()}.${ext}`;
+    const fileName = `case${nextCaseNumber}_1.${ext}`;
     const r2Key = `cases/${nextCaseNumber}/${fileName}`;
 
     // ☁️ R2 업로드
