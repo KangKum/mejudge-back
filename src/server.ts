@@ -155,7 +155,7 @@ app.post("/api/case", upload.single("image"), async (req, res) => {
     }
 
     // 📦 데이터
-    const { caseTitle, caseText, caseResult } = req.body;
+    const { caseTitle, caseText, caseResult, caseResult2 } = req.body;
     const file = req.file;
 
     if (!caseTitle || !caseText || !caseResult) {
@@ -202,6 +202,7 @@ app.post("/api/case", upload.single("image"), async (req, res) => {
       caseTitle,
       caseText,
       caseResult,
+      caseResult2,
       images: [r2Key],
       createdAt: new Date(),
     };
