@@ -214,6 +214,30 @@ app.post("/api/case", upload.single("image"), async (req, res) => {
   }
 });
 
+// 사건 삭제
+app.delete("/api/deleteCase/:caseId", async (req, res) => {
+  try {
+    // 🔐 인증
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "인증 필요" });
+    }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await userCollection.findOne({ id: decoded.userId });
+    if (user?.isMJAdmin !== "yesAdmin") {
+      return res.status(403).json({ message: "관리자만 가능" });
+    }
+    const { caseId } = req.params;
+    const result = await caseCollection.deleteOne({ _id: new ObjectId(caseId) });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "해당 사건을 찾을 수 없습니다." });
+    }
+    res.status(200).json({ message: "사건이 성공적으로 삭제되었습니다." });
+  } catch (error) {
+    res.status(500).json({ error: "사건 삭제에 실패했습니다." });
+  }
+});
+
 //사건 조회
 app.get("/api/cases", async (req, res) => {
   const { type, userId } = req.query;
