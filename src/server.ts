@@ -116,8 +116,12 @@ app.get("/api/check-admin", async (req, res) => {
 app.put("/api/change-nickname", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ message: "토큰이 필요합니다." });
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const user = await userCollection.findOne({ id: decoded.userId });
+  if (user?.isMJAdmin !== "yesAdmin") {
+    return res.status(403).json({ message: "관리자만 가능" });
+  }
   try {
-    jwt.verify(token, JWT_SECRET); // 인증만 확인
     const { nickname } = req.body;
     const countBadnickname = await badnicknameCollection.countDocuments();
     const newNickname = "불건전한닉네임" + (countBadnickname + 1);
@@ -413,7 +417,6 @@ app.get("/api/comments/:userId", async (req, res) => {
   }
 });
 //댓글 삭제
-// 사건 삭제
 app.delete("/api/deleteComment/:commentId", async (req, res) => {
   try {
     // 🔐 인증
