@@ -202,7 +202,7 @@ app.post("/api/case", upload.single("image"), async (req, res) => {
       caseTitle,
       caseText,
       caseResult,
-      caseResult2,
+      caseResult2: caseResult2 || "",
       images: [r2Key],
       createdAt: new Date(),
     };
