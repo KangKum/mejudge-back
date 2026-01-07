@@ -366,6 +366,26 @@ app.get("/api/judgements/:userId", async (req, res) => {
     res.status(500).json({ error: "판결 조회에 실패했습니다." });
   }
 });
+//사건 선고처리
+app.post("/api/markCaseAsSentenced/:userId/:caseNumber", async (req, res) => {
+  const { userId, caseNumber } = req.params;
+  try {
+    const result = await userCollection.updateOne({ id: userId }, { $addToSet: { sentenced: caseNumber } });
+    // res.status(200).json({ message: "사건이 성공적으로 판결 처리되었습니다.", result });
+  } catch (error) {
+    res.status(500).json({ error: "사건 판결 처리에 실패했습니다." });
+  }
+});
+//사건 읽음처리
+app.post("/api/markCaseAsRead/:userId/:caseNumber", async (req, res) => {
+  const { userId, caseNumber } = req.params;
+  try {
+    const result = await userCollection.updateOne({ id: userId }, { $addToSet: { read: caseNumber } });
+    // res.status(200).json({ message: "사건이 성공적으로 읽음 처리되었습니다.", result });
+  } catch (error) {
+    res.status(500).json({ error: "사건 읽음 처리에 실패했습니다." });
+  }
+});
 
 //댓글 등록
 app.post("/api/comment/:userId/:caseId", async (req, res) => {
