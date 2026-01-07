@@ -250,7 +250,7 @@ app.get("/api/cases", async (req, res) => {
 
   try {
     const cases = await caseCollection.find({}, { projection }).sort({ _id: -1 }).limit(limit).toArray();
-    res.status(200).json({ totalCases: cases.length, cases: cases });
+    res.status(200).json({ cases: cases });
   } catch (error) {
     res.status(500).json({ error: "사건 목록 조회 실패" });
   }
