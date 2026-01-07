@@ -249,7 +249,7 @@ app.get("/api/cases", async (req, res) => {
   const limit = parseInt(String(req.query.limit)) || 10; // 쿼리스트링에서 limit 받기
 
   let query = {};
-  const projection = { _id: 1, caseNumber: 1, caseTitle: 1 };
+  const projection = { _id: 1, caseNumber: 1, caseTitle: 1, sentencedUsers: 1, readUsers: 1 };
 
   if (type === "done" && userId) {
     query = { sentencedUsers: userId };
