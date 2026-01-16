@@ -7,6 +7,7 @@ import cron from "node-cron";
 import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
+import rateLimit from "express-rate-limit";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -35,8 +36,43 @@ app.use(
 );
 app.use(express.json()); // JSON 파싱
 
+// Rate Limiting 설정
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15분
+  max: 5, // 15분당 최대 5회 시도
+  message: "너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1분
+  max: 100, // 1분당 최대 100회 요청
+  message: "요청 횟수가 너무 많습니다. 잠시 후 다시 시도해주세요.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 전체 API에 Rate Limiting 적용
+app.use("/api/", apiLimiter);
+
+// 헬스체크 엔드포인트
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
+app.get("/ready", async (req, res) => {
+  try {
+    // MongoDB 연결 상태 확인
+    await client.db().admin().ping();
+    res.status(200).json({ status: "READY", timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(503).json({ status: "NOT_READY", error: "Database connection failed" });
+  }
+});
+
 //회원가입
-app.post("/api/signup", async (req, res) => {
+app.post("/api/signup", authLimiter, async (req, res) => {
   const { id, password, nickname } = req.body;
   try {
     const existingUser = await userCollection.findOne({ id });
@@ -67,17 +103,17 @@ app.post("/api/signup", async (req, res) => {
 });
 
 //로그인
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", authLimiter, async (req, res) => {
   const { id, password } = req.body;
   try {
     // 1. 아이디/비밀번호 검증 (DB 등)
     const user = await userCollection.findOne({ id });
     if (!user) {
-      return res.status(400).json({ message: "존재하지 않는 아이디입니다" });
+      return res.status(401).json({ message: "로그인 정보가 올바르지 않습니다" });
     }
     const passwordMatch = await bcrypt.compare(password, user.pw);
     if (!passwordMatch) {
-      return res.status(401).json({ message: "비밀번호가 일치하지 않습니다" });
+      return res.status(401).json({ message: "로그인 정보가 올바르지 않습니다" });
     }
     // 2. JWT 생성
     const token = jwt.sign(
